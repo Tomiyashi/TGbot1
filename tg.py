@@ -1,28 +1,48 @@
+import asyncio
+from data import monday,tuesday,wednesday,thursday,friday,saturday
+import sqlite3
+import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-import asyncio
-import aioschedule
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 TOKEN_API = '5974312085:AAFXoviRvo7w6FRUg9mdkMGN7E19dJzhd0I'
 
 bot = Bot(TOKEN_API)
 dp = Dispatcher(bot)
 
+# Connect to the SQLite database
+conn = sqlite3.connect('subscribers.db')
+c = conn.cursor()
+
+# Create the subscribers table if it doesn't exist
+c.execute('''CREATE TABLE IF NOT EXISTS subscribers (chat_id INTEGER PRIMARY KEY)''')
+
 ckb = InlineKeyboardMarkup(row_width=2)
-ckb.add(InlineKeyboardButton('Назад👨🏼‍🦽',
-                             callback_data='Back'))
+ckb.add(InlineKeyboardButton('Назад👨🏼‍🦽',callback_data='Back'))
 
 kb = ReplyKeyboardMarkup()
-kb.add(KeyboardButton('Помоги мне😓'))
-kb.add(KeyboardButton('Зачем я нужен🤗'))
-kb.add(KeyboardButton('Школа🥶'))
+kb.add(KeyboardButton('😓Помоги мне😓'))
+kb.add(KeyboardButton('🤗Зачем я нужен🤗'))
+kb.add(KeyboardButton('🥶Школа🥶'))
+kb.add(KeyboardButton('🧠Подписка на рассылку🧠'))
 
 HELP_COMMAND = """
 /help - список команд
 /start - начать работу с ботом
 /description - что я умею
 /School schedule - школьное расписание"""
+
+
+@dp.message_handler(lambda message:message.text == '🧠Подписка на рассылку🧠')
+async def subscribe(message:types.Message):
+    chat_id = message.from_user.id
+    c.execute("INSERT INTO subscribers (chat_id) VALUES (?)", (chat_id,))
+    conn.commit()
+    await message.reply("👍🏼ВЫ СДЕЛАЛИ АХУЕННО👍🏼")
+
 
 
 @dp.message_handler(lambda message: message.text == 'Зачем я нужен🤗')
@@ -47,6 +67,12 @@ async def help_command(message: types.Message):
     await message.delete()
 
 
+@dp.message_handler(lambda message: message.text == '🧠Подписка на рассылку🧠')
+async def help_command(message: types.Message):
+    await message.answer('<em><b>Данный бот будет напоминать вам о вашем школьном рассписание</b></em>',
+                         parse_mode="HTML")
+    await message.delete()
+
 @dp.message_handler(lambda message: message.text == 'Школа🥶')
 async def help_command(message: types.Message):
     ikb = InlineKeyboardMarkup(row_width=2)
@@ -70,8 +96,7 @@ async def help_command(message: types.Message):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Monday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)👽Разговоры о важном👽\n2)🤝Физ-Ра🤝\n3)💋История💋\n4)☠️Русский Язык☠️\n5)💩Математика💩\n'
-             f'6)🥴Страноведение🥴\n7)💋Право💋</b></em>',
+        text=monday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -80,8 +105,7 @@ async def M(callback: types.CallbackQuery):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Tuesday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)💋Общество💋\n2)💩Математика💩\n3)👾Биология👾\n4)☠️Л️итература☠️\n5)🥴Англ.Яз.🥴\n'
-             f'6)😵‍💫Физика😵‍💫</b></em>',
+        text=tuesday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -90,8 +114,7 @@ async def M(callback: types.CallbackQuery):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Wednesday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)🤤Химия🤤\n2)🤝Физ-Ра🤝\n3)☠️Литература☠️\n4)☠️Русский Язык☠️\n5)😵‍💫Астрономия😵‍💫\n'
-             f'6)💩Математика💩</b></em>',
+        text=wednesday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -100,8 +123,7 @@ async def M(callback: types.CallbackQuery):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Thursday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)💋Право💋\n2)🥴Англ.Яз.🥴\n3)💩Математика💩\n4)🤪География🤪\n5)💋История💋\n'
-             f'6)💩Практикум по Математике💩</b></em>',
+        text=thursday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -110,8 +132,7 @@ async def M(callback: types.CallbackQuery):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Friday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)🤝Физ-Ра🤝\n2)😵‍💫Физика😵‍💫\n3)☠️Русский Язык☠️\n4)☠️Литература☠️\n5)💩Математика💩\n'
-             f'6)💋Общество💋\n🏃🏼‍♂️️Функц.Гр.🏃🏼‍♂️</b></em>',
+        text=friday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -120,8 +141,7 @@ async def M(callback: types.CallbackQuery):
 @dp.callback_query_handler(lambda callback_query: callback_query.data == 'Saturday')
 async def M(callback: types.CallbackQuery):
     await callback.message.answer(
-        text=f'<em><b>1)🥴Англ.Яз.🥴\n2)💅🏼Информатика💅🏼\n3)💩Математика💩\n4)💆🏼‍♂️Кубановедение💆🏼‍♂️\n5)🎩ОБЖ🎩\n'
-             f'6)🦧Практикум по Русскому🦧</b></em>',
+        text=saturday,
         parse_mode="HTML",
         reply_markup=ckb)
     await callback.message.delete()
@@ -147,52 +167,39 @@ async def C(callback: types.CallbackQuery):
     await callback.message.delete()
 
 
-@dp.message_handler()
-async def Monday_(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
+def send_message(chat_id: int, message: str):
+    bot.send_message(chat_id=chat_id, text=message)
 
 
-@dp.message_handler()
-async def Tuesday_(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
-
-
-@dp.message_handler()
-async def Wednesday_(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
-
-
-@dp.message_handler()
-async def Thursday_(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
-
-
-@dp.message_handler()
-async def Friday(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
-
-
-@dp.message_handler()
-async def Saturday_(users):
-    for user in set(users):
-        await bot.send_message(chat_id=user, text="Хей🖖 не забудь выбрать свой ужин сегодня")
-
-
-async def scheduler():
-    aioschedule.every().day.at("06:40").do(choose_your_dinner)
-    while True:
-        await aioschedule.run_pending()
-        await asyncio.sleep(1)
-
-async def on_startup(dp):
-    asyncio.create_task(scheduler())
+def schedule_messages():
+    cursor = conn.cursor()
+    cursor.execute("SELECT chat_id FROM subscribers")
+    chat_ids = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_message, 'interval', (chat_ids, monday),
+                          start_date='2023-01-23 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='mon')
+    scheduler.add_job(send_message, 'interval', (chat_ids, tuesday),
+                          start_date='2023-01-24 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='tue')
+    scheduler.add_job(send_message, 'interval', (chat_ids, wednesday),
+                          start_date='2023-01-25 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='wed')
+    scheduler.add_job(send_message, 'interval', (chat_ids, thursday),
+                          start_date='2023-01-26 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='thu')
+    scheduler.add_job(send_message, 'interval', (chat_ids, friday),
+                          start_date='2023-01-27 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='fri')
+    scheduler.add_job(send_message, 'interval', (chat_ids, saturday),
+                          start_date='2023-01-28 06:30:00', end_date='2023-12-31 06:30:00',
+                          day_of_week='sat')
+    scheduler.start()
 
 
 
 if __name__ == '__main__':
+    schedule_messages()
     executor.start_polling(dp, skip_updates=True)
