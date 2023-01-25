@@ -26,8 +26,6 @@ async def main() -> None:
     await task_2
 
 
-if __name__ == '__main__':
-    asyncio.run(main())
 
 
 
